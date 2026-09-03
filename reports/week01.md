@@ -30,6 +30,18 @@
 
   ## 4. IP-suunnitelma
 
+  | Verkko | Tarkoitus | Yhdyskäytävä |
+  |---|---|---|
+  | 10.10.10.0/24 | User LAN (client1) | r1 eth2 = 10.10.10.1 |
+  | 10.10.10.0/24 (2. segmentti) | attacker-linkki | r1 eth3 = 10.10.10.254 |
+  | 10.10.20.0/24 | Server LAN (web1, db1) | r2 eth2 = 10.10.20.1 |
+  | 10.10.30.0/24 | Branch LAN | r3 eth2 = 10.10.30.1 |
+  | 10.10.99.0/24 | Management LAN | r2 eth3 = 10.10.99.1 |
+  | 10.255.12.0/30 | r1↔r2 runkolinkki | r1=.1, r2=.2 |
+  | 10.255.23.0/30 | r2↔r3 runkolinkki | r2=.1, r3=.2 |
+  | 172.20.20.0/24 | Containerlab-hallintaverkko (Docker), erillinen loogisesta verkosta
+  | — |
+
   ## 5. Reitityksen analyysi
 
   ## 6. Yhteenveto
