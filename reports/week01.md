@@ -4,6 +4,8 @@
 
   ## 2. Verkkokaavio
 
+  ![Verkon topologia](images/topology.png)
+
   ## 3. Laiteluettelo
   
 | Laite | Rooli |
