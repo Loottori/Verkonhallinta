@@ -24,6 +24,8 @@ Install-snmp.yml-playbookin suorituksen yhteydessä havaittiin ja korjattiin kä
 
 ## Oma playbook
 
+![Web-palvelimen (web1) index.html Ansiblella asennettuna](images/OmaPlaybookweb1.png)
+
 Tehtävässä 4.4 toteutettiin molemmat vaihtoehdot. Web-palvelin-playbook asensi web1-koneelle nginxin, julkaisi yksinkertaisen index.html-sivun, käynnisti palvelun ja otti sen käyttöön, ja lopuksi varmisti HTTP-vastauskoodin 200 uri-moduulilla. Tietokantapalvelin-playbook asensi db1-koneelle MariaDB:n, käynnisti ja otti palvelun käyttöön, loi testitietokannan testdb ja käyttäjän testuser tarvittavine oikeuksineen, ja varmisti lopuksi tietokannan olemassaolon. Molemmissa playbookeissa hyödynnettiin samaa rakennetta kuin esimerkkiplaybookeissa — muuttujia, tehtäviä ja tarvittaessa handlereita — ja molemmissa jouduttiin soveltamaan samaa use: service -korjausta, joka löydettiin jo SNMP-playbookin debugauksen yhteydessä. Molemmat suoritukset onnistuivat täydellisesti, failed-arvon ollessa nolla, ja lopputulos vahvistui vielä erikseen: tietokanta testdb löytyi koneelta db1.
 
 Tehtävässä 4.5 kerättiin järjestelmätiedot kaikilta neljältä Ubuntu-koneelta setup-moduulilla. Kaikki koneet raportoivat käyttöjärjestelmäkseen Ubuntu 24.04:n, kuusi ydintä ja kaksitoista vCPU:ta sekä 7548 megatavua muistia. Havaittujen IP-osoitteiden osalta on syytä huomata, että setup-moduulin näyttämä osoite on hallintaverkon (172.20.20.0/24) osoite, jonka kautta Ansible-yhteys muodostuu — kullakin koneella on tämän lisäksi oma erillinen data_ip, kuten web1:n 10.10.20.101 tai db1:n 10.10.20.102, jota käytetään koneiden väliseen varsinaiseen liikenteeseen eikä Ansiblen hallintaan. Se, että kaikilla neljällä koneella on täsmälleen sama prosessori- ja muistimäärä, ei ole sattumaa, vaan seuraus siitä, että kaikki kontit jakavat saman taustalla olevan Docker-isännän resurssit eivätkä ole erillisiä fyysisiä koneita — tämä havainnollistaa hyvin eroa konttipohjaisen ja oikean fyysisen laitteiston inventoinnin välillä.
@@ -34,22 +36,12 @@ Käsin tehdyn ja Ansiblella automatisoidun työn ero tuli konkreettisesti näkyv
 
 Ansiblen automaatiosta koituva hyöty kasvaa selvästi laitteiden määrän ja toistuvuuden myötä. Muutaman koneen kertaluonteisessa asennuksessa käsin tekeminen voi olla nopeampaa, mutta kun koneita on kymmeniä tai kun sama toimenpide — esimerkiksi tietoturvapäivitys tai uuden valvontatyökalun käyttöönotto — pitää tehdä toistuvasti, käsin tekeminen muuttuu sekä hitaaksi että virhealttiiksi. Automaatio muuttuu käytännössä välttämättömäksi silloin, kun laitteiden määrä ylittää sen, mitä yksi henkilö voi luotettavasti hallita muistinvaraisesti, tai kun sama konfiguraatio pitää pystyä toistamaan täysin identtisenä useissa ympäristöissä.
 
-┌───────────────┬───────────────────┬─────────────────────┬─────────────────────────┬────────┐
-│     Kone      │ Käyttöjärjestelmä │  IP-osoite (mgmt,   │ Prosessorit (ytimet /   │ Muisti │
-│               │                   │        eth0)        │          vCPU)          │        │
-├───────────────┼───────────────────┼─────────────────────┼─────────────────────────┼────────┤
-│ db1           │ Ubuntu 24.04      │ 172.20.20.13        │ 6 / 12                  │ 7548   │
-│               │                   │                     │                         │ MB     │
-├───────────────┼───────────────────┼─────────────────────┼─────────────────────────┼────────┤
-│ web1          │ Ubuntu 24.04      │ 172.20.20.7         │ 6 / 12                  │ 7548   │
-│               │                   │                     │                         │ MB     │
-├───────────────┼───────────────────┼─────────────────────┼─────────────────────────┼────────┤
-│ branch-client │ Ubuntu 24.04      │ 172.20.20.17        │ 6 / 12                  │ 7548   │
-│               │                   │                     │                         │ MB     │
-├───────────────┼───────────────────┼─────────────────────┼─────────────────────────┼────────┤
-│ client1       │ Ubuntu 24.04      │ 172.20.20.8         │ 6 / 12                  │ 7548   │
-│               │                   │                     │                         │ MB     │
-└───────────────┴───────────────────┴─────────────────────┴─────────────────────────┴────────┘
+| Kone | Käyttöjärjestelmä | IP-osoite (mgmt, eth0) | Prosessorit (ytimet / vCPU) | Muisti |
+|---|---|---|---|---|
+| db1 | Ubuntu 24.04 | 172.20.20.13 | 6 / 12 | 7548 MB |
+| web1 | Ubuntu 24.04 | 172.20.20.7 | 6 / 12 | 7548 MB |
+| branch-client | Ubuntu 24.04 | 172.20.20.17 | 6 / 12 | 7548 MB |
+| client1 | Ubuntu 24.04 | 172.20.20.8 | 6 / 12 | 7548 MB |
 
 ## Yhteenveto
 

@@ -1,0 +1,48 @@
+
+- name: Install and configure web server
+  hosts: web1
+  become: true
+
+  vars:
+    web_package: nginx
+    web_root: /var/www/html
+
+  tasks:
+
+    - name: Update package cache
+      apt:
+        update_cache: yes
+
+    - name: Install web server package
+      apt:
+        name: "{{ web_package }}"
+        state: present
+
+    - name: Deploy index.html
+      copy:
+        dest: "{{ web_root }}/index.html"
+        content: |
+          <html>
+            <head><title>{{ inventory_hostname }}</title></head>
+            <body>
+              <h1>Palvelin: {{ inventory_hostname }}</h1>
+              <p>Asennettu Ansiblella ({{ web_package }})</p>
+            </body>
+          </html>
+
+    - name: Enable and start web server
+      service:
+        name: "{{ web_package }}"
+        enabled: yes
+        state: started
+        use: service
+
+    - name: Verify web server responds
+      uri:
+        url: "http://localhost:80/"
+        status_code: 200
+      register: result
+
+    - name: Show verification result
+      debug:
+        msg: "Web server running on {{ inventory_hostname }}, HTTP status {{ result.status }}"

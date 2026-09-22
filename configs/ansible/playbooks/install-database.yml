@@ -1,0 +1,56 @@
+---
+- name: Install and configure database server
+  hosts: db1
+  become: true
+
+  vars:
+    db_package: mariadb-server
+    db_service: mariadb
+    test_db_name: testdb
+    test_db_user: testuser
+    test_db_password: TestPass123!
+
+  tasks:
+
+    - name: Update package cache
+      apt:
+        update_cache: yes
+
+    - name: Install database server package
+      apt:
+        name: "{{ db_package }}"
+        state: present
+
+    - name: Enable and start database service
+      service:
+        name: "{{ db_service }}"
+        enabled: yes
+        state: started
+        use: service
+
+    - name: Create test database
+      command: mysql -e "CREATE DATABASE IF NOT EXISTS {{ test_db_name }};"
+      changed_when: true
+
+    - name: Create test database user
+      command: mysql -e "CREATE USER IF NOT EXISTS '{{ test_db_user }}'@'localhost' IDENTIFIED BY '{{ test_db_password }}';"
+      changed_when: true
+      no_log: true
+
+    - name: Grant privileges to test user
+      command: mysql -e "GRANT ALL PRIVILEGES ON {{ test_db_name }}.* TO '{{ test_db_user }}'@'localhost'; FLUSH PRIVILEGES;"
+      changed_when: true
+
+    - name: Verify database process is running
+      shell: pgrep mariadbd
+      register: db_process
+      changed_when: false
+
+    - name: Verify test database exists
+      command: mysql -e "SHOW DATABASES LIKE '{{ test_db_name }}';"
+      register: db_check
+      changed_when: false
+
+    - name: Show verification result
+      debug:
+        msg: "Tietokanta {{ test_db_name }} löytyy koneelta {{ inventory_hostname }}: {{ test_db_name in db_check.stdout }}"

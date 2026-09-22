@@ -37,6 +37,7 @@
         name: snmpd
         enabled: yes
         state: started
+        use: service
 
     - name: Verify SNMP process
       shell: pgrep snmpd
@@ -53,3 +54,4 @@
       service:
         name: snmpd
         state: restarted
+        use: service
