@@ -190,6 +190,23 @@ ip route 192.168.100.0 255.255.255.0 172.16.0.1
 
 # Ansible-palvelimen valmistelu
 
+Tehdään labran käyttöön uusi / uudet wsl distrot. Ennen aloittamista, vaihda wsl verkon tila muotoon mirrored. Tämä onnistuu yksinkertaisimmin windows sovelluksella wsl settings (löytyy start-valikosta)
+
+## WSL 
+
+```powershell
+wsl -l -o
+# valitaan sopiva distro, esim. ubuntu-24.04
+wsl --install Ubuntu-24.04 --name lab1-ubuntu
+
+# voit kirjautua uudelle distrolle jollei automaattisesti siirry
+
+wsl -d lab1-ubuntu
+
+```
+Ota luokan koneelle käyttöön uusi distro käyttäjätunnuksella tllabra ja salasanalla tllabra
+
+
 ## Tarvittavat paketit
 
 ```bash

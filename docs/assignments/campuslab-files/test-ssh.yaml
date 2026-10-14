@@ -1,0 +1,92 @@
+---
+# Playbook: selvittää tarvittavat SSH-optiot vanhojen Cisco-routtereiden
+# tavoittamiseksi (vanhat KEX/HostKey/Cipher-algoritmit).
+#
+# Käyttö:
+#   ansible-playbook -i inventory.ini test-ssh.yaml
+#
+# Vaatii, että inventory sisältää ryhmän "cisco_old_routers" ja
+# ansible_host / ansible_user -muuttujat.
+
+- name: Selvitä tarvittavat SSH-optiot vanhoihin Cisco-routtereihin
+  hosts: cisco_old_routers
+  gather_facts: no
+  connection: local
+  vars:
+    ssh_target_port: "{{ ansible_port | default(22) }}"
+
+  tasks:
+
+    - name: Tarkista onko ssh-asiakasohjelma asennettu
+      command: which ssh
+      register: ssh_bin
+      changed_when: false
+
+    - name: Yritä tavallinen SSH-yhteys ilman erikoisoptioita
+      command: >
+        ssh -o BatchMode=yes -o ConnectTimeout=5
+        -o StrictHostKeyChecking=no
+        {{ ansible_user | default('admin') }}@{{ ansible_host }}
+        -p {{ ssh_target_port }} exit
+      register: plain_ssh
+      changed_when: false
+      failed_when: false
+
+    - name: Näytä virhe tavallisesta yrityksestä (jos epäonnistui)
+      debug:
+        var: plain_ssh.stderr
+      when: plain_ssh.rc != 0
+
+    - name: Kokeile vanhoja KEX/HostKey/Cipher-algoritmeja (diagnostiikka)
+      command: >
+        ssh -vvv -o BatchMode=yes -o ConnectTimeout=5
+        -o StrictHostKeyChecking=no
+        -o KexAlgorithms=+diffie-hellman-group1-sha1,diffie-hellman-group14-sha1
+        -o HostKeyAlgorithms=+ssh-rsa,ssh-dss
+        -o PubkeyAcceptedAlgorithms=+ssh-rsa,ssh-dss
+        -o Ciphers=+aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc
+        -o MACs=+hmac-sha1,hmac-md5
+        {{ ansible_user | default('admin') }}@{{ ansible_host }}
+        -p {{ ssh_target_port }} exit
+      register: legacy_ssh
+      changed_when: false
+      failed_when: false
+
+    - name: Näytä täydellinen debug-loki vanhoista algoritmeista
+      debug:
+        var: legacy_ssh.stderr_lines
+      when: legacy_ssh.rc != 0
+
+    - name: Ilmoita onnistuiko yhteys legacy-optioilla
+      debug:
+        msg: "Yhteys onnistui käyttäen legacy KEX/HostKey/Cipher-optioita"
+      when: legacy_ssh.rc == 0
+
+    - name: Kirjoita toimivat SSH-optiot ssh_config-tiedostoon jokaiselle hostille
+      blockinfile:
+        path: "{{ playbook_dir }}/generated_ssh_config"
+        create: yes
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - {{ inventory_hostname }}"
+        block: |
+          Host {{ inventory_hostname }}
+              HostName {{ ansible_host }}
+              Port {{ ssh_target_port }}
+              User {{ ansible_user | default('admin') }}
+              KexAlgorithms +diffie-hellman-group1-sha1,diffie-hellman-group14-sha1
+              HostKeyAlgorithms +ssh-rsa,ssh-dss
+              PubkeyAcceptedAlgorithms +ssh-rsa,ssh-dss
+              Ciphers +aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc
+              MACs +hmac-sha1,hmac-md5
+      when: legacy_ssh.rc == 0
+      delegate_to: localhost
+
+    - name: Yhteenveto tuloksista
+      debug:
+        msg:
+          - "Host: {{ inventory_hostname }} ({{ ansible_host }})"
+          - "Tavallinen SSH toimi: {{ plain_ssh.rc == 0 }}"
+          - "Legacy-optioilla toimi: {{ legacy_ssh.rc == 0 }}"
+
+# Huom: käytä generoitua generated_ssh_config-tiedostoa
+# ansible_ssh_common_args-muuttujassa, esim:
+#   ansible_ssh_common_args: "-F {{ playbook_dir }}/generated_ssh_config"
